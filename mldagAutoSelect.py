@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 31 12:35:30 2020
+Created on Thu Jan 06 12:35:30 2022
 
 @author: JohannesBuck
 
 The estimator
-for max-linear Bayesian networks (MLDAG)
-without automated parameter selection. 
+for max-linear Bayesian networks (MLDAG) with automated parameter selection. 
+(cf Algorithm 2 in "Learning Bayesian Networks from Extreme Data" from Buck and Tran)
 
 """
 
@@ -15,13 +15,27 @@ import numpy as np
 import networkx as nx
 import pickle
 import os
-from MLDAG import trim, idempotent, maxlinear_fit, Network, get_extreme_data
-from utils import create_sa, fromCtoB, MLMatrixMult, count_accuracy, _count_accuracy, saveTo
+from MLDAG import trim, trim2, maxlinear_fit, Network, get_extreme_data
+from utils import create_sa, fromCtoB, MLMatrixMult, count_accuracy, _count_accuracy, saveTo, plotParameterSelection
 import random
+import scipy.cluster
 
 
 
 def generateSubsamples(X,save_folder, nrep):
+    
+"""
+Function for creating  subsamples of X with replacement 
+
+Args: 
+   X (n x d numpy array): Matrix of n d-dimensional observations
+   save_folder (str): name of the subfolder to save subsamples
+   nrep (int): number of subsamples
+ 
+ Returns: 
+   samples (list of n x d numpy arrays): list with n_rep subsamples of X
+
+"""
 
   n=X.shape[0]
   samples=[]
@@ -34,6 +48,26 @@ def generateSubsamples(X,save_folder, nrep):
 
 
 def mldagAutoSelect(X, save_folder, n_rep = 100, alpha_range = [0.7,0.8,0.9], lambda_range = [0.3], saveAll=True): 
+
+"""
+Function for calculating MLDAG for all alpha in alpha_range and all lambda in lambda_range
+
+Args: 
+   X (n x d numpy array): Matrix of n d-dimensional observations
+   save_folder (str): name of the subfolder to save subsamples
+   n_rep (int): number of subsamples
+   alpha_range (list of floats in [0,1]): All values of alpha to consider
+   lambda_range (list of floats in [0,1]): All values of lambda to consider
+   saveAll (bool): True, if all estimated Kleene start matrices should be saved, otherwise false 
+
+ 
+ Returns: 
+   B_est_coll(dict of list of d x d numpy arrays): Output is a dictionary. For each key (lambda,alpha),  
+   B_est_coll contains a list of estimated Kleene star matrices for X and the n_rep subsamples
+
+"""
+    
+  
   d=X.shape[1]  
   
   samples=[X]+generateSubsamples(X,save_folder, n_rep)
@@ -41,24 +75,30 @@ def mldagAutoSelect(X, save_folder, n_rep = 100, alpha_range = [0.7,0.8,0.9], la
   B_est_coll={}
 
   for idx, sample in enumerate(samples):  
-      
       if (idx%10) == 0:
           print("Generating Estimates for subsample ", idx, " out of ", n_rep)
 
-      
+      if idx==0:
+          bool_E=True
+      else:
+          bool_E=False
         
       for alpha in alpha_range:
           
           
-          [X,X2,C_norm]=get_extreme_data(np.copy(sample),alpha)
+          [X,X2]=get_extreme_data(np.copy(sample),alpha)
             
           for lambda1 in lambda_range:
-                  
+                 
             model = Network(dim=d)       
-            W_est=maxlinear_fit(model,np.copy(X),np.copy(X2),C_norm, lambda1)
+            W_est=trim2(maxlinear_fit(model,np.copy(X),np.copy(X2),bool_E, lambda1))
             
-            B_est=trim(np.copy(W_est),np.quantile(W_est,0.8))
-            
+            with np.errstate(divide='ignore'):
+                w_flat=np.log(W_est.flatten())
+            w_flat=w_flat[np.isfinite(w_flat)]
+
+
+            B_est=trim(np.copy(W_est),w_threshold=np.exp(np.mean(scipy.cluster.vq.kmeans(w_flat,2)[0])))
             
             
             if idx==0:
@@ -77,19 +117,25 @@ def mldagAutoSelect(X, save_folder, n_rep = 100, alpha_range = [0.7,0.8,0.9], la
 
 if __name__ == "__main__":
     
+"""
+The main function for the estimator
+for max-linear Bayesian networks (MLDAG) with automated parameter selection. 
+
+"""
+    
     
     #possible datasets: "danube", "top-colorado", "middle-colorado", "bottom-colorado", "bottom-colorado150"
     
-    datasets=["danube", "top-colorado", "middle-colorado", "bottom-colorado", "bottom-colorado150"]
+    datasets=["top-colorado", "middle-colorado", "bottom-colorado", "bottom-colorado150"]
   
           
-    alpharange = [0.75,0.8,0.85,0.9,0.95]
-    lambdarange = [0.3]
+    alpharange = [0.8]
+    lambdarange = [0.3,0.35,0.4,0.45,0.5]
     
         
     for dataset in datasets:
         
-        random.seed("ml")
+        random.seed(1)
         print("Automated Parameter Selection for ", dataset)
             
         data_file = os.path.join(dataset,'data.pk')
@@ -143,8 +189,13 @@ if __name__ == "__main__":
         print("True Positive Rate: ", scores[0]['tpr'])
         print("nSHD: ",scores[0]['shd'])
         
-        
         saveTo(scores_coll,dataset,'scores_all_params.pk')
+        
+        if len(lambdarange)==1 or len(alpharange)==1:
+            plotParameterSelection(dataset,B, B_est_coll, lambdarange,alpharange)
+        
+        
+        
         
         
     

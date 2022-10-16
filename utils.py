@@ -14,7 +14,7 @@ import networkx as nx
 import os
 import pickle
 import random
-
+import matplotlib.pyplot as plt
 
 #naming convention files
 def _appendModelInfo(fname,q,smallR):
@@ -306,4 +306,85 @@ def updateR(R,j,i):
 
     return(R)
 
+def plotParameterSelection(dataset,B, B_est_coll, lambdarange,alpharange):
+    
+"""
+Recreate the Plot for the Parameter Selection
 
+Args:
+    dataset (str): name of the dataset 
+    B (numpy dxd array): True Kleene star matrix of the dataset
+    B_est_coll(dict of list of d x d numpy arrays): Output is a dictionary. For each key (lambda,alpha),  
+        B_est_coll contains a list of estimated Kleene star matrices for the original dataset and its subsamples
+    lambda_range (list of floats in [0,1]): All values of lambda
+    alpha_range (list of floats in [0,1]): All values of alpha
+    
+
+Returns:
+     Saves the plots as in "Learning Bayesian Networks from Extreme Data" (cf. Figures 3-7) 
+     in the subfolder plots_parameterselection/dataset.png
+"""
+    
+    plt.ioff()
+    
+    n_range=len(B_est_coll[(lambdarange[0],alpharange[0])])-1
+    shd=[]
+    tpr=[]
+    shdcoll=np.zeros((len(lambdarange), n_range))
+    tprcoll=np.zeros((len(lambdarange), n_range))
+    
+    param_best={"alpha": np.inf, "lambda": np.inf}
+    
+    shd_best=np.inf
+    
+    
+    
+    for idx, lambda1 in enumerate(lambdarange):
+        for alpha in alpharange:
+            
+            B_est=B_est_coll[(lambda1, alpha)][0]
+            
+            scores = count_accuracy(B_est_coll[(lambda1,alpha)][0],B_est_coll[(lambda1,alpha)][1:])
+            shdcoll[idx,:]=[b["shd"] for b in scores]
+            tprcoll[idx,:]=[b["tpr"] for b in scores]
+            
+            shd+=[count_accuracy(B,[B_est])[0]["shd"]]
+            tpr+=[count_accuracy(B,[B_est])[0]["tpr"]]
+    
+    
+            if np.mean([b["shd"] for b in scores])<shd_best:
+    
+               shd_best=np.mean([b["shd"] for b in scores])
+               param_best['alpha']=alpha
+               param_best['lambda']=lambda1
+               
+    if len(lambdarange)==1:
+        x=alpharange.copy()
+        xlabelname=r"$\alpha$"
+    else:
+        x=lambdarange.copy()
+        xlabelname=r"$\lambda$"
+
+    
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    ax1.plot(x, shd, 'g-', marker="o",linewidth=2)
+    ax2.plot(x, tpr, 'b-', marker="o",linewidth=2)
+    ax1.boxplot(np.transpose(shdcoll), positions=x, widths=0.03)
+    ax1.axvline(x=param_best["lambda"], color="r")
+    plt.xlim([min(x)-0.03, max(x)+0.03])
+    plt.grid(axis = 'y')
+    ax1.set_xlabel(xlabelname,size=18)
+    ax1.set_ylabel('nSHD',size=18)
+    ax2.set_ylabel('TPR',size=18)
+    ax1.tick_params(labelsize=15)
+    ax2.tick_params(labelsize=15)
+    plt.title("nSHD and TPR for "+ dataset,size=20)
+    ax2.set_ylim([0,1.1])
+    ax1.set_ylim([0,0.8])
+    
+    if not os.path.exists("plots_parameterselection"):    
+        os.makedirs("plots_parameterselection")
+  
+    name="plots_parameterselection/"+dataset+".png"
+    plt.savefig(name)
