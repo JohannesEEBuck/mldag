@@ -150,7 +150,7 @@ class Network(nn.Module):
     
     
 def custom_loss(output, target,n):  
-     """
+    """
     Computes the loss function as in line 4 of Algorithm 1 in "Learning Bayesian Networks 
     from Extreme Data"
     
