@@ -27,33 +27,33 @@ import scipy.cluster
 
 class Network(nn.Module):
     
-"""
-Defines the max-linear network in terms of a neural network with torch  
-"""
+    """
+    Defines the max-linear network in terms of a neural network with torch  
+    """
     
     
     def __init__(self, dim):
-    """
-    Initialization of the network
-    """
+        """
+        Initialization of the network
+        """
         super(Network, self).__init__()
         d=dim
         self.linears = nn.ModuleList([nn.Linear(1, d) for i in range(d)])
         self.dim = dim
     
     def forward(self, x, E): 
-    """
-    Forward function: For the current model, it calculates the max-linear matrix multiplication
-    
-    Args:
-        x: (n x d torch array): Matrix of n d-dimensional observations
-        E: (bool): If True, calculates C^(d-1)*x (cf Algorithm 1, line 4 in Learning Bayesian Networks 
-                   from Extreme Data), if False, it calculates the  C*x; Here C are the weights of the neural
-                   network
-    Returns:
-        The matrix multiplication explained above
-                
-    """
+        """
+        Forward function: For the current model, it calculates the max-linear matrix multiplication
+        
+        Args:
+            x: (n x d torch array): Matrix of n d-dimensional observations
+            E: (bool): If True, calculates C^(d-1)*x (cf Algorithm 1, line 4 in Learning Bayesian Networks 
+                       from Extreme Data), if False, it calculates the  C*x; Here C are the weights of the neural
+                       network
+        Returns:
+            The matrix multiplication explained above
+                    
+        """
         
         d = self.dim
         n= x[0].size()[0]
@@ -83,14 +83,14 @@ Defines the max-linear network in terms of a neural network with torch
 
     
     def h_func(self):
-    """
-    Calculates the h value according to the Paper "DAGs with NO TEARS: Continuous Optimization for Structure Learning"
-    by Zheng et al
-    
-    Returns:
-        h (torch float): The h value (which is zero if and only if the underlying network is a DAG)
-                
-    """
+        """
+        Calculates the h value according to the Paper "DAGs with NO TEARS: Continuous Optimization for Structure Learning"
+        by Zheng et al
+        
+        Returns:
+            h (torch float): The h value (which is zero if and only if the underlying network is a DAG)
+                    
+        """
         d = self.dim
         
         W=torch.exp(self.linears[0].bias).view(d,-1)
@@ -109,14 +109,14 @@ Defines the max-linear network in terms of a neural network with torch
 
     
     def weight_constraint(self):  
-    """
-    Calculates the regularization term f of the model as in equation (15) of "Learning Bayesian Networks 
-                   from Extreme Data"
-    
-    Returns:
-         (torch float): The regularization term 
-                
-    """
+        """
+        Calculates the regularization term f of the model as in equation (15) of "Learning Bayesian Networks 
+                       from Extreme Data"
+        
+        Returns:
+             (torch float): The regularization term 
+                    
+        """
         reg=0
         
         for i, l in enumerate(self.linears):
@@ -127,13 +127,13 @@ Defines the max-linear network in terms of a neural network with torch
     
     @torch.no_grad()
     def layer_to_adj(self) -> np.ndarray:
-    """
-    Converts the weights of the Neural Network to a Kleene star matrix
-    
-    Returns:
-         W (torch dxd array): The Kleene star matrix
-                
-    """
+        """
+        Converts the weights of the Neural Network to a Kleene star matrix
+        
+        Returns:
+             W (torch dxd array): The Kleene star matrix
+                    
+        """
         d = self.dim
         
         W=self.linears[0].bias.data.view(d,-1)
@@ -282,23 +282,23 @@ def maxlinear_fit(model: nn.Module,
                       h_tol: float = 1e-8,
                       rho_max: float = 1e+16):
     
-"""
-Main maxlinear fit function
-
-Args:
-    model (torch.nn.Module): A model 
-    X1 (n x d numpy array): matrix of explanatory variables as in the function get_extreme_data
-    X2 (n x d numpy array): matrix of response variables as in the function get_extreme_data
-    E (bool): If True, calculate C^(d-1)*X, otherwise the computationally more feasbile C*X
-    lambda1 (float): value for lambda as in line 4 of algorithm 1 in "Learning Bayesian Networks from Extreme Data"
-    max_iter (ind): Maximum number of iterations in the gradient descent
-    h_tol(float): The optimization terminates if the h value is smaller than h_tol 
-                  (Recall: the h value is zero if and only if the result is supported on a DAG)
-    rho(float): The maximum value of rho to enforce the h_val to be zero
-
-Returns:
-     W_est (d x d numpy array): (d x d numpy array): Estimated Kleene star matrix
-"""
+    """
+    Main maxlinear fit function
+    
+    Args:
+        model (torch.nn.Module): A model 
+        X1 (n x d numpy array): matrix of explanatory variables as in the function get_extreme_data
+        X2 (n x d numpy array): matrix of response variables as in the function get_extreme_data
+        E (bool): If True, calculate C^(d-1)*X, otherwise the computationally more feasbile C*X
+        lambda1 (float): value for lambda as in line 4 of algorithm 1 in "Learning Bayesian Networks from Extreme Data"
+        max_iter (ind): Maximum number of iterations in the gradient descent
+        h_tol(float): The optimization terminates if the h value is smaller than h_tol 
+                      (Recall: the h value is zero if and only if the result is supported on a DAG)
+        rho(float): The maximum value of rho to enforce the h_val to be zero
+    
+    Returns:
+         W_est (d x d numpy array): (d x d numpy array): Estimated Kleene star matrix
+    """
 
     
     n=X.shape[0]
@@ -395,11 +395,11 @@ Returns:
 
 if __name__ == '__main__':
     
-"""
-The main function for the estimator
-for max-linear Bayesian networks (MLDAG) without automated parameter selection. 
-
-"""
+    """
+    The main function for the estimator
+    for max-linear Bayesian networks (MLDAG) without automated parameter selection. 
+    
+    """
     
     #possible datasets: danube, top-colorado, middle-colorado, bottom-colorado, bottom-colorado150    
     
@@ -455,47 +455,3 @@ for max-linear Bayesian networks (MLDAG) without automated parameter selection.
     
 
    
-   
-        
-        
-
-
-
-
-
-
-
-
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        

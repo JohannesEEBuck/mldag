@@ -308,22 +308,22 @@ def updateR(R,j,i):
 
 def plotParameterSelection(dataset,B, B_est_coll, lambdarange,alpharange):
     
-"""
-Recreate the Plot for the Parameter Selection
-
-Args:
-    dataset (str): name of the dataset 
-    B (numpy dxd array): True Kleene star matrix of the dataset
-    B_est_coll(dict of list of d x d numpy arrays): Output is a dictionary. For each key (lambda,alpha),  
-        B_est_coll contains a list of estimated Kleene star matrices for the original dataset and its subsamples
-    lambda_range (list of floats in [0,1]): All values of lambda
-    alpha_range (list of floats in [0,1]): All values of alpha
+    """
+    Recreate the Plot for the Parameter Selection
     
-
-Returns:
-     Saves the plots as in "Learning Bayesian Networks from Extreme Data" (cf. Figures 3-7) 
-     in the subfolder plots_parameterselection/dataset.png
-"""
+    Args:
+        dataset (str): name of the dataset 
+        B (numpy dxd array): True Kleene star matrix of the dataset
+        B_est_coll(dict of list of d x d numpy arrays): Output is a dictionary. For each key (lambda,alpha),  
+            B_est_coll contains a list of estimated Kleene star matrices for the original dataset and its subsamples
+        lambda_range (list of floats in [0,1]): All values of lambda
+        alpha_range (list of floats in [0,1]): All values of alpha
+        
+    
+    Returns:
+         Saves the plots as in "Learning Bayesian Networks from Extreme Data" (cf. Figures 3-7) 
+         in the subfolder plots_parameterselection/dataset.png
+    """
     
     plt.ioff()
     
